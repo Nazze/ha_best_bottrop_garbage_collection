@@ -1,4 +1,6 @@
 # ha_best_bottrop_garbage_collection
+[![hacs_badge](https://img.shields.io/badge/HACS-Custom-41BDF5.svg?style=for-the-badge)](https://github.com/hacs/integration)
+
 Home Assistant Component for BEST Bottrop Garbage Collection Dates
 
 This is a custom component for [Homeassistant](https://www.home-assistant.io/). 
