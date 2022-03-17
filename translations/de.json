@@ -1,0 +1,21 @@
+{
+  "config": {
+    "title" : "BEST Bottrop Abfuhrtermine",
+    "step": {
+      "user": {
+        "title": "Bitte wählen Sie eine Straße und Hausnummer, um die Abfuhrtermine abzurufen",
+        "data": {
+          "street_name": "Straße",
+          "number": "Hausnummer"
+        }
+      }
+    },
+    "abort": {
+      "already_configured": "Adresse bereits konfiguriert",
+      "unknown": "Unerwarteter Fehler"
+    },
+    "error": {
+      "config": "Die Konfiguration ist nicht gültig. Bitte überprüfen Sie die Hausnummer!"
+    }
+  }
+}

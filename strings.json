@@ -1,0 +1,21 @@
+{
+  "config": {
+    "title" : "{name}",
+    "step": {
+      "user": {
+        "title": "Please choose street name and enter house number in order to get updates on the garbage collection dates",
+        "data": {
+          "street_name": "Street",
+          "number": "Number"
+        }
+      }
+    },
+    "abort": {
+      "already_configured": "[%key:common::config_flow::abort::already_configured_device%]",
+      "unknown": "[%key:common::config_flow::error::unknown%]"
+    },
+    "error": {
+      "config": "The configuration is not valid. Please check house number!"
+    }
+  }
+}

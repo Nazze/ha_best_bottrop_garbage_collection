@@ -1,0 +1,21 @@
+{
+  "config": {
+    "title" : "BEST Garbage collection dates",
+    "step": {
+      "user": {
+        "title": "Please choose street name and enter house number in order to get updates on the garbage collection dates",
+        "data": {
+          "street_name": "Street",
+          "number": "Number"
+        }
+      }
+    },
+    "abort": {
+      "already_configured": "Address already configured",
+      "unknown": "Unexpected error"
+    },
+    "error": {
+      "config": "The configuration is not valid. Please check house number!"
+    }
+  }
+}
