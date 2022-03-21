@@ -90,7 +90,7 @@ class BESTBottropSensor(CoordinatorEntity, SensorEntity):
         super().__init__(coordinator)
 
         self._attr_attribution = ATTRIBUTION
-        self._attr_native_unit_of_measurement = "date"
+        #        self._attr_native_unit_of_measurement = "days"
         self._attr_unique_id = f"{street_name}-{number}-{trash_type_name}"
         self._attr_name = f"{street_name} {number} {trash_type_name}"
         self._attr_icon = TRASH_ICONS[trash_type_id]
@@ -104,7 +104,8 @@ class BESTBottropSensor(CoordinatorEntity, SensorEntity):
         self._trash_type_name = trash_type_name
         self._message = ""
         self._next_date = None
-        self._days = 0
+
+    #        self._days = 0
 
     @callback
     def _handle_coordinator_update(self) -> None:
@@ -125,26 +126,27 @@ class BESTBottropSensor(CoordinatorEntity, SensorEntity):
                         # next collection date for the trashtype found
                         # the format is dd.mm.yyyy
                         ldate = next_collection["formattedDate"].split(".", 3)
-                        _LOGGER.debug(
-                            "Updateing native value: %s",
-                            str(date(int(ldate[2]), int(ldate[1]), int(ldate[0]))),
-                        )
                         # self._attr_native_value = date(
                         # int(ldate[2]), int(ldate[1]), int(ldate[0])
                         # )
-                        self._state = str(
-                            date(int(ldate[2]), int(ldate[1]), int(ldate[0]))
-                        )
+                        # self._state = str(
+                        #     date(int(ldate[2]), int(ldate[1]), int(ldate[0]))
+                        # )
                         self._next_date = date(
                             int(ldate[2]), int(ldate[1]), int(ldate[0])
                         )
 
                         diff_date = self._next_date - date.today()
 
+                        _LOGGER.debug(
+                            "Updateing native value: %s",
+                            str(diff_date),
+                        )
+
                         if diff_date.days > 0:
-                            self._days = diff_date.days
+                            self._state = diff_date.days
                         else:
-                            self._days = 0
+                            self._state = None
 
                         self._message = next_collection["message"]
 
@@ -164,7 +166,7 @@ class BESTBottropSensor(CoordinatorEntity, SensorEntity):
             "trash_type_name ": self._trash_type_name,
             "special_message": self._message,
             "next_collection_date": str(self._next_date),
-            "days_left": self._days,
+            #            "days_left": self._days,
         }
 
         return attr

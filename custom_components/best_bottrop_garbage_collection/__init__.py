@@ -68,7 +68,7 @@ async def get_coordinator(
         logging.getLogger(__name__),
         name=DOMAIN,
         update_method=async_update_collection_dates,
-        update_interval=timedelta(seconds=5),
+        update_interval=timedelta(hours=12),
     )
     await coordinator.async_config_entry_first_refresh()
 
