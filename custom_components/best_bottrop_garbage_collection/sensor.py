@@ -14,7 +14,7 @@ from homeassistant.helpers.update_coordinator import (
     DataUpdateCoordinator,
 )
 from best_bottrop_garbage_collection_dates import BESTBottropGarbageCollectionDates
-from datetime import timedelta
+from datetime import date, datetime, time, timedelta
 from aiohttp import ClientError
 
 import logging
@@ -104,8 +104,7 @@ class BESTBottropSensor(CoordinatorEntity, SensorEntity):
         self._trash_type_name = trash_type_name
         self._message = ""
         self._next_date = None
-
-    #        self._days = 0
+        self._days = 0
 
     @callback
     def _handle_coordinator_update(self) -> None:
@@ -132,19 +131,28 @@ class BESTBottropSensor(CoordinatorEntity, SensorEntity):
                         # self._state = str(
                         #     date(int(ldate[2]), int(ldate[1]), int(ldate[0]))
                         # )
-                        self._next_date = date(
-                            int(ldate[2]), int(ldate[1]), int(ldate[0])
-                        )
+                        next_date = date(int(ldate[2]), int(ldate[1]), int(ldate[0]))
+                        _LOGGER.debug("Next date %s", next_date)
+                        _LOGGER.debug("Today  %s", datetime.today())
 
-                        diff_date = self._next_date - date.today()
+                        diff_date = next_date - date.today()
+
+                        _LOGGER.debug("Diff  %s", diff_date)
+
+                        self._next_date = (
+                            datetime(next_date.year, next_date.month, next_date.day)
+                            .astimezone()
+                            .isoformat()
+                        )
 
                         _LOGGER.debug(
                             "Updateing native value: %s",
-                            str(diff_date),
+                            str(diff_date.days),
                         )
 
                         if diff_date.days > 0:
                             self._state = diff_date.days
+                            self._days = diff_date.days
                         else:
                             self._state = None
 
@@ -165,8 +173,8 @@ class BESTBottropSensor(CoordinatorEntity, SensorEntity):
             "trash_type_id": self._trash_type_id,
             "trash_type_name": self._trash_type_name,
             "special_message": self._message,
-            "next_collection_date": str(self._next_date),
-            #            "days_left": self._days,
+            "next_date": str(self._next_date),
+            "days": self._days,
         }
 
         return attr
