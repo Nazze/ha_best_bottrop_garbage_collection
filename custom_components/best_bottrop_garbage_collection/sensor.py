@@ -163,7 +163,7 @@ class BESTBottropSensor(CoordinatorEntity, SensorEntity):
             "street_number": self._number,
             "street_id": self._street_id,
             "trash_type_id": self._trash_type_id,
-            "trash_type_name ": self._trash_type_name,
+            "trash_type_name": self._trash_type_name,
             "special_message": self._message,
             "next_collection_date": str(self._next_date),
             #            "days_left": self._days,
