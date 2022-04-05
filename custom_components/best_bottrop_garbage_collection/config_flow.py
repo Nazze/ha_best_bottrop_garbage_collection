@@ -51,7 +51,7 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             )
             if len(res_list) == 0:
                 raise ValueError
-        except ClientResponseError as e:
+        except ClientResponseError:
             # There was some kind of problem to make the GET command (connectivity problems?)
             _LOGGER.exception("Unexpected exception")
             raise ValueError
