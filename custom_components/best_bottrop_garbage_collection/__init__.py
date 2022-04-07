@@ -31,7 +31,6 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     unload_ok = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
     if len(hass.config_entries.async_entries(DOMAIN)) == 1:
         hass.data.pop(DOMAIN)
-
     return unload_ok
 
 

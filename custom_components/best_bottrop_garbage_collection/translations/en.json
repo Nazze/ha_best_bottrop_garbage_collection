@@ -1,6 +1,6 @@
 {
+  "title" : "BEST Garbage collection dates",
   "config": {
-    "title" : "BEST Garbage collection dates",
     "step": {
       "user": {
         "title": "Please choose street name and enter house number in order to get updates on the garbage collection dates",

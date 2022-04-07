@@ -96,7 +96,8 @@ class BESTBottropSensor(CoordinatorEntity, SensorEntity):
         trash_type_unique = trash_type_name.lower().replace(" ", "_")
 
         self._attr_attribution = ATTRIBUTION
-        self._attr_unique_id = f"{street_name}-{number}-{trash_type_unique}"
+        self._attr_unique_id = f"{street_name_unique}_{number}_{trash_type_unique}"
+        self.entity_id = f"sensor.{street_name_unique}_{number}_{trash_type_unique}"
         self._attr_name = f"{trash_type_name}"
         self._attr_icon = TRASH_ICONS[trash_type_id]
         self._state = None
