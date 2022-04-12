@@ -21,34 +21,58 @@ _LOGGER = logging.getLogger(__name__)
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Set up BEST Bottrop from a config entry."""
-    await get_coordinator(hass)
+    coordinator = BESTCoordinator(hass)
+    hass.data[DOMAIN] = coordinator
+
     hass.config_entries.async_setup_platforms(entry, PLATFORMS)
+
+    # Update data for the first time. This has to be done after adding the entities,
+    # otherwise the listeners won't be ready and won't be updated after reboot or
+    # adding the component for the first time
+    await coordinator.async_refresh()
+
     return True
 
 
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Unload BEST Bottrop config entry."""
+
     unload_ok = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
+
     if len(hass.config_entries.async_entries(DOMAIN)) == 1:
         hass.data.pop(DOMAIN)
     return unload_ok
 
 
-async def get_coordinator(
-    hass: HomeAssistant,
-) -> DataUpdateCoordinator:
-    """Get the data update coordinator."""
-    if DOMAIN in hass.data:
-        return hass.data[DOMAIN]
+class BESTCoordinator(DataUpdateCoordinator):
+    """This is the coordinator for the BEST custom component."""
 
-    async def async_update_collection_dates() -> list[dict]:
+    def __init__(self, hass):
+        """Initialize my coordinator."""
+        super().__init__(
+            hass,
+            logging.getLogger(__name__),
+            # Name of the data. For logging purposes.
+            name=DOMAIN,
+            # Polling interval. Will only be polled if there are subscribers.
+            update_interval=timedelta(hours=12),
+        )
 
+    async def _async_update_data(self) -> dict:
+        """Fetch data from API endpoint.
+
+        This is the place to pre-process the data to lookup tables
+        so entities can quickly look up their data.
+        """
         # create a list with responses
-        # streetid : JSON-Object
-        ret_list: list = []
 
-        for entry in hass.config_entries.async_entries(DOMAIN):
-            _LOGGER.debug("Request for update for entry %s", entry.data["street_id"])
+        # streetid : JSON-Object
+        ret_dict: dict = {}
+
+        for entry in self.hass.config_entries.async_entries(DOMAIN):
+            _LOGGER.debug(
+                "Request for data fetch for street_id %s", entry.data["street_id"]
+            )
 
             # ClientError Exceptions already caught by HA
             async with async_timeout.timeout(10):
@@ -56,19 +80,7 @@ async def get_coordinator(
                     entry.data["street_id"], entry.data["number"]
                 )
             resp_list = list(resp)
-            ret_list.append([entry.data["street_id"], resp_list])
+            # the data is structured as a dict. The key is the street_id. That data to that key is the JSON-dict.
+            ret_dict[entry.data["street_id"]] = resp_list
 
-        return ret_list
-
-    # Update dates every 12 hrs
-    coordinator = DataUpdateCoordinator(
-        hass,
-        logging.getLogger(__name__),
-        name=DOMAIN,
-        update_method=async_update_collection_dates,
-        update_interval=timedelta(hours=12),
-    )
-    # await coordinator.async_config_entry_first_refresh()
-
-    hass.data[DOMAIN] = coordinator
-    return coordinator
+        return ret_dict
