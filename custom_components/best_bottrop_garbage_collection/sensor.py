@@ -1,26 +1,20 @@
 """ Platform sensor for BEST Bottrop"""
 from __future__ import annotations
-
+import logging
+from datetime import date, datetime, timedelta
 from homeassistant.components.sensor import SensorEntity
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import (
     HomeAssistant,
     callback,
 )
-from datetime import date
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import (
     CoordinatorEntity,
     DataUpdateCoordinator,
 )
 from best_bottrop_garbage_collection_dates import BESTBottropGarbageCollectionDates
-from datetime import date, datetime, time, timedelta
-from aiohttp import ClientError
-
-import logging
-
-from . import get_coordinator
-from .const import ATTRIBUTION
+from .const import ATTRIBUTION, DOMAIN
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -49,7 +43,7 @@ async def async_setup_entry(
 ) -> None:
     """Defer sensor setup to the shared sensor module."""
 
-    coordinator = await get_coordinator(hass)
+    coordinator = hass.data[DOMAIN]
 
     entities: list[BESTBottropSensor] = []
 
@@ -69,9 +63,7 @@ async def async_setup_entry(
             )
         )
 
-    await coordinator.async_config_entry_first_refresh()
-
-    async_add_entities(entities, True)
+    async_add_entities(entities)
 
 
 class BESTBottropSensor(CoordinatorEntity, SensorEntity):
@@ -119,48 +111,55 @@ class BESTBottropSensor(CoordinatorEntity, SensorEntity):
             "I am %s, callback function called",
             self._attr_unique_id,
         )
+
+        if self._trash_type_id == "A2954658" or self._trash_type_id == "43806A8A":
+            _LOGGER.debug("Container oder Weihnachten!")
+            return
+
+        if self._trash_type_id == "3F14EDC7":
+            _LOGGER.debug("GELBE TONNE!")
         # Now find my JSON
-        sub_list_data: lists
-        for sub_list_data in self.coordinator.data:
-            if self._street_id in sub_list_data[0]:
-                # iterate throught the JSON of our street_id!
-                for next_collection in sub_list_data[1]:
-                    # now find the resulting trash type
-                    _LOGGER.debug("Unpacking data %s", next_collection)
-                    if self._trash_type_id == next_collection["trashType"]:
-                        # next collection date for the trashtype found
-                        # the format is dd.mm.yyyy
-                        ldate = next_collection["formattedDate"].split(".", 3)
-                        next_date = date(int(ldate[2]), int(ldate[1]), int(ldate[0]))
-                        _LOGGER.debug("Next date %s", next_date)
-                        _LOGGER.debug("Today  %s", datetime.today())
+        # sub_list_data: lists
+        # the data is structured as a dict. The key is the street_id.
+        # That data to that key is the JSON-dict.
+        if self._street_id in self.coordinator.data:
+            street_json = self.coordinator.data[self._street_id]
+            # iterate throught the JSON of our street_id!
+            for next_collection in street_json:
+                # now find the resulting trash type
+                if self._trash_type_id == next_collection["trashType"]:
+                    # next collection date for the trashtype found
+                    # the format is dd.mm.yyyy
+                    ldate = next_collection["formattedDate"].split(".", 3)
+                    next_date = date(int(ldate[2]), int(ldate[1]), int(ldate[0]))
+                    _LOGGER.debug("Next date %s", next_date)
+                    _LOGGER.debug("Today  %s", datetime.today())
 
-                        diff_date = next_date - date.today()
+                    diff_date = next_date - date.today()
 
-                        _LOGGER.debug("Diff  %s", diff_date)
+                    _LOGGER.debug("Diff  %s", diff_date)
 
-                        self._next_date = (
-                            datetime(next_date.year, next_date.month, next_date.day)
-                            .astimezone()
-                            .isoformat()
-                        )
+                    self._next_date = (
+                        datetime(next_date.year, next_date.month, next_date.day)
+                        .astimezone()
+                        .isoformat()
+                    )
 
-                        _LOGGER.debug(
-                            "Updateing native value: %s",
-                            str(diff_date.days),
-                        )
+                    _LOGGER.debug(
+                        "Updateing native value: %s",
+                        str(diff_date.days),
+                    )
 
-                        if diff_date.days >= 0:
-                            # if the diff date == 0, then it is/was today.
-                            self._state = diff_date.days
-                            self._days = diff_date.days
-                        else:
-                            self._state = None
+                    if diff_date.days >= 0:
+                        # if the diff date == 0, then it is/was today.
+                        self._state = diff_date.days
+                        self._days = diff_date.days
+                    else:
+                        self._state = None
 
-                        self._message = next_collection["message"]
+                    self._message = next_collection["message"]
 
-                        self.async_write_ha_state()
-                        break
+                    break
         self.async_write_ha_state()
 
     @property
@@ -180,17 +179,6 @@ class BESTBottropSensor(CoordinatorEntity, SensorEntity):
         return attr
 
     @property
-    def available(self) -> bool:
-        """Return if sensor is available."""
-        return self.coordinator.last_update_success and (
-            self._street_id in self.coordinator.data[0]
-        )
-
-    @property
     def native_value(self) -> str:
         """Return the state of the sensor."""
         return self._state
-
-    @property
-    def should_poll(self) -> bool:
-        return True
