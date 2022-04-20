@@ -1,4 +1,5 @@
 {
   "name": "BEST Bottrop Garbage Collection Dates",
-  "country": ["DE"]
+  "country": ["DE"],
+  "render_readme" : true
 }
