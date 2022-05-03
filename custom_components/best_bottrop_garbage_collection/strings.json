@@ -12,10 +12,10 @@
     },
     "abort": {
       "already_configured": "[%key:common::config_flow::abort::already_configured_device%]",
-      "unknown": "[%key:common::config_flow::error::unknown%]"
+      "unknown": "[%key:common::config_flow::abort::unknown%]"
     },
     "error": {
-      "config": "The configuration is not valid. Please check house number!"
+      "config": "[%key:common::config_flow::error::config%]"
     }
   }
 }
