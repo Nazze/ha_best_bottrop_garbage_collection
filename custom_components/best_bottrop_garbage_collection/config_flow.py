@@ -33,13 +33,13 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     _selected_number: int = 0
     _selected_street_name: str = ""
     _data: dict[str, int] = None
+    _errors: dict[str, str] = {}
 
     async def validate_best_config(self) -> None:
         """Validate that the data is correct and can be retrieved
         Raises a ValueError if there the data cannot be retrieved
         """
         res_list: list[dict] = [""]
-        errors: dict[str, str] = {}
 
         if self._selected_street_id == "" or self._selected_number <= 0:
             raise ValueError
@@ -51,9 +51,11 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             )
             if len(res_list) == 0:
                 raise ValueError
-        except ClientResponseError:
+        except:
             # There was some kind of problem to make the GET command (connectivity problems?)
-            _LOGGER.exception("Unexpected exception")
+            _LOGGER.exception(
+                "Unexpected exception during configuration. Maybe wrong street number"
+            )
             raise ValueError
 
         # If the result is empty, the API did not return anything due to invalid data
@@ -63,7 +65,7 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     ) -> FlowResult:
         """Handle the initial step."""
         self._data = user_input
-        errors: dict[str, str] = {}
+        self._errors = {}
 
         if self._street_id_dict is None:
             self._street_id_dict = self._bgc.get_street_id_dict()
@@ -88,9 +90,9 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             try:
                 await self.validate_best_config()
             except ValueError:
-                errors = {"base": "config"}
+                self._errors["base"] = "wrong_address"
 
-            if not errors:
+            if not self._errors:
                 await self.async_set_unique_id(
                     f"{self._selected_street_id}_{self._selected_number}"
                 )
@@ -117,5 +119,5 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                     vol.Required("number"): int,
                 }
             ),
-            errors=errors,
+            errors=self._errors,
         )

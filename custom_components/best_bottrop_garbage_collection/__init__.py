@@ -21,6 +21,7 @@ _LOGGER = logging.getLogger(__name__)
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Set up BEST Bottrop from a config entry."""
+
     coordinator = BESTCoordinator(hass)
     hass.data[DOMAIN] = coordinator
 
@@ -39,8 +40,9 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     unload_ok = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
 
-    if len(hass.config_entries.async_entries(DOMAIN)) == 1:
+    if not hass.data[DOMAIN]:
         hass.data.pop(DOMAIN)
+
     return unload_ok
 
 
@@ -55,7 +57,7 @@ class BESTCoordinator(DataUpdateCoordinator):
             # Name of the data. For logging purposes.
             name=DOMAIN,
             # Polling interval. Will only be polled if there are subscribers.
-            update_interval=timedelta(hours=12),
+            update_interval=timedelta(hours=4),
         )
 
     async def _async_update_data(self) -> dict:
