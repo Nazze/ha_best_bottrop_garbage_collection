@@ -8,13 +8,23 @@ from homeassistant.core import (
     HomeAssistant,
     callback,
 )
+from homeassistant.helpers import entity_platform
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
+
 from homeassistant.helpers.update_coordinator import (
     CoordinatorEntity,
     DataUpdateCoordinator,
 )
+
+# from homeassistant.helpers.entity_component import EntityComponent
+from .const import (
+    ATTRIBUTION,
+    DOMAIN,
+    SERVICE_IGNORE,
+)
+import voluptuous as vol
+
 from best_bottrop_garbage_collection_dates import BESTBottropGarbageCollectionDates
-from .const import ATTRIBUTION, DOMAIN
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -43,7 +53,7 @@ async def async_setup_entry(
 ) -> None:
     """Defer sensor setup to the shared sensor module."""
 
-    coordinator = hass.data[DOMAIN]
+    coordinator = hass.data[DOMAIN]["coordinator"]
 
     entities: list[BESTBottropSensor] = []
 
@@ -62,6 +72,16 @@ async def async_setup_entry(
                 trash_type.get("name"),
             )
         )
+
+    platform = entity_platform.async_get_current_platform()
+
+    _LOGGER.debug("Registering service")
+
+    platform.async_register_entity_service(
+        SERVICE_IGNORE,
+        {vol.Optional("days", default=2): int},
+        SERVICE_IGNORE,
+    )
 
     async_add_entities(entities)
 
@@ -103,6 +123,7 @@ class BESTBottropSensor(CoordinatorEntity, SensorEntity):
         self._message = ""
         self._next_date = None
         self._days = -1
+        self._ignore = None
 
     @callback
     def _handle_coordinator_update(self) -> None:
@@ -122,7 +143,9 @@ class BESTBottropSensor(CoordinatorEntity, SensorEntity):
         # sub_list_data: lists
         # the data is structured as a dict. The key is the street_id.
         # That data to that key is the JSON-dict.
-        if self._street_id in self.coordinator.data:
+        if (self.coordinator.data is not None) and (
+            self._street_id in self.coordinator.data
+        ):
             street_json = self.coordinator.data[self._street_id]
             # iterate throught the JSON of our street_id!
             for next_collection in street_json:
@@ -134,6 +157,11 @@ class BESTBottropSensor(CoordinatorEntity, SensorEntity):
                     next_date = date(int(ldate[2]), int(ldate[1]), int(ldate[0]))
                     _LOGGER.debug("Next date %s", next_date)
                     _LOGGER.debug("Today  %s", datetime.today())
+                    _LOGGER.debug("Ignore until  %s", self._ignore)
+
+                    if (self._ignore is not None) and (next_date <= self._ignore):
+                        _LOGGER.debug("SKIPPING")
+                        continue
 
                     diff_date = next_date - date.today()
 
@@ -174,6 +202,7 @@ class BESTBottropSensor(CoordinatorEntity, SensorEntity):
             "special_message": self._message,
             "next_date": str(self._next_date),
             "days": self._days,
+            "ignore_until": str(self._ignore),
         }
 
         return attr
@@ -182,3 +211,21 @@ class BESTBottropSensor(CoordinatorEntity, SensorEntity):
     def native_value(self) -> str:
         """Return the state of the sensor."""
         return self._state
+
+    async def ignore(self, days: int):
+        """Handle the ignore call. This will ignore this entity for the defined days"""
+        _LOGGER.debug("Called handle_ignore for %s", self._attr_unique_id)
+
+        ignore_until: date = None
+
+        _LOGGER.debug("got days %s", str(days))
+
+        if days == 0:
+            _LOGGER.debug("Days is zero. Resetting")
+            ignore_until = None
+        else:
+            ignore_until = date.today() + timedelta(days=days)
+
+        _LOGGER.debug("Ignoring until %s", ignore_until)
+        self._ignore = ignore_until
+        await self.async_update_ha_state(True)
