@@ -7,6 +7,6 @@
   "iot_class": "cloud_polling",
   "name": "BEST Bottrop garbage collection dates",
   "requirements": ["best_bottrop_garbage_collection_dates==0.0.23"],
-  "version": "0.21",
+  "version": "0.22",
   "issue_tracker": "https://github.com/Nazze/ha_best_bottrop_garbage_collection/issues"
 }
