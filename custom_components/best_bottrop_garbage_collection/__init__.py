@@ -1,6 +1,6 @@
 from homeassistant.const import Platform
 import logging
-from datetime import timedelta
+from datetime import timedelta, date
 from homeassistant import config_entries
 from homeassistant.core import HomeAssistant
 from homeassistant.config_entries import ConfigEntry
@@ -10,9 +10,18 @@ from homeassistant.helpers.update_coordinator import (
     UpdateFailed,
 )
 import async_timeout
+
 from best_bottrop_garbage_collection_dates import BESTBottropGarbageCollectionDates
 
-from .const import DOMAIN
+from .const import (
+    DOMAIN,
+    ATTR_DAYS,
+    DEFAULT_DAYS,
+    SENSOR_PLATFORM,
+    COORDINATOR,
+    ENITITY_COMPONENT,
+    SERVICE_IGNORE,
+)
 
 PLATFORMS = [Platform.SENSOR]
 
@@ -21,8 +30,10 @@ _LOGGER = logging.getLogger(__name__)
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Set up BEST Bottrop from a config entry."""
+
     coordinator = BESTCoordinator(hass)
-    hass.data[DOMAIN] = coordinator
+    hass.data[DOMAIN] = {COORDINATOR: coordinator}
+    # hass.data[DOMAIN].coordinator = coordinator
 
     hass.config_entries.async_setup_platforms(entry, PLATFORMS)
 
@@ -39,8 +50,9 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     unload_ok = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
 
-    if len(hass.config_entries.async_entries(DOMAIN)) == 1:
+    if not hass.data[DOMAIN]:
         hass.data.pop(DOMAIN)
+
     return unload_ok
 
 
@@ -55,7 +67,7 @@ class BESTCoordinator(DataUpdateCoordinator):
             # Name of the data. For logging purposes.
             name=DOMAIN,
             # Polling interval. Will only be polled if there are subscribers.
-            update_interval=timedelta(hours=12),
+            update_interval=timedelta(hours=4),
         )
 
     async def _async_update_data(self) -> dict:

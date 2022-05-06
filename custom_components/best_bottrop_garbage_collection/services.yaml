@@ -1,0 +1,15 @@
+ignore:
+  description: Ignore this garbage entity for the next defined days (because you brought out the garbage bin)
+  target:
+    entity:
+      integration: best_bottrop_garbage_collection
+  fields:
+    days:
+      description: Define, how many days this sensor should be ignored (optional, default = 2, max=365, reset = 0)
+      example: 2
+      selector:
+       number:
+         min: 0
+         max: 365
+         step: 1
+         mode: box
