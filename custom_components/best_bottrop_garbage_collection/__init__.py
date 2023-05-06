@@ -35,7 +35,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     hass.data[DOMAIN] = {COORDINATOR: coordinator}
     # hass.data[DOMAIN].coordinator = coordinator
 
-    hass.config_entries.async_setup_platforms(entry, PLATFORMS)
+    await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
 
     # Update data for the first time. This has to be done after adding the entities,
     # otherwise the listeners won't be ready and won't be updated after reboot or
