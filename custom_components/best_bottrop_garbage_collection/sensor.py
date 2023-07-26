@@ -167,10 +167,8 @@ class BESTBottropSensor(CoordinatorEntity, SensorEntity):
 
                     _LOGGER.debug("Diff  %s", diff_date)
 
-                    self._next_date = (
-                        datetime(next_date.year, next_date.month, next_date.day)
-                        .astimezone()
-                        .isoformat()
+                    self._next_date = date(
+                        next_date.year, next_date.month, next_date.day
                     )
 
                     _LOGGER.debug(
