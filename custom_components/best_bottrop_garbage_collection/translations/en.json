@@ -15,5 +15,17 @@
     "error": {
       "wrong_address": "The configuration is not valid. Please check house number!"
     }
+  },
+  "services": {
+    "ignore": {
+      "name" : "Ignoriere the pickup",
+      "description" : "Ignore this garbage entity for the next defined days (because you brought out the garbage bin)",
+      "fields" : {
+        "days" : {
+          "name" : "Days",
+          "description" : "Define, how many days this sensor should be ignored (optional, default = 2, max=365, reset = 0)"
+        }
+      }
+    }
   }
 }

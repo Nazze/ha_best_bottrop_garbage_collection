@@ -15,5 +15,17 @@
     "error": {
       "wrong_address": "Die Konfiguration ist nicht gültig. Bitte überprüfen Sie die Hausnummer!"
     }
+  },
+  "services": {
+    "ignore": {
+      "name" : "Ignoriere die Abholung",
+      "description" : "Ignoriere die Abholung für diese Entity für die angegebene Anzahl an Tagen (zum Beispiel, weil der Müll schon abgeholt wurde)",
+      "fields" : {
+        "days" : {
+          "name" : "Tage",
+          "description" : "Legt fest, wie viele Tage die Abholung übersprungen werden soll (optional, default = 2, max=365, zurücksetzen = 0"
+        }
+      }
+    }
   }
 }
