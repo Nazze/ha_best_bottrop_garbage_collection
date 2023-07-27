@@ -37,6 +37,10 @@ MANIFEST
 pip-log.txt
 pip-delete-this-directory.txt
 
+# HACS
+/hacs
+/hacs.json
+
 # Unit test / coverage reports
 htmlcov/
 .tox/
