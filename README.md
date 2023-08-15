@@ -94,3 +94,20 @@ cards:
       numeric: true
 
 ```
+
+Double click on a garbage entity will ignore the collection for this trash type for 2 days.
+
+![Lovelace ignored](docs/images/05_example_dashboard_2.png)
+
+## Services
+
+Services will help you to ignore a garbage entity for the next defined days (because you brought out the garbage bin). The above Lovelace example makes use of this.
+If you want to manually set it or reset it, you can go to
+
+1. Developer Tools
+2. Services
+3. Select Service "BEST Bottrop garbage collection dates: ignore"
+4. Select the entity or multiple entities
+5. Define, how many days this sensor should be ignored (optional, default = 2, max=365, reset = 0)
+
+![Service](docs/images/06_service_call.png)
