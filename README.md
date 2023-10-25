@@ -1,5 +1,5 @@
 # Garbage Collection Dates - City of Bottrop (DE)
-[![hacs_badge](https://img.shields.io/badge/HACS-Custom-41BDF5.svg?style=for-the-badge)](https://github.com/hacs/integration)
+[![hacs_badge](https://img.shields.io/badge/HACS-Default-orange.svg?style=for-the-badge)](https://github.com/custom-components/hacs)
 
 Home Assistant Component for BEST Bottrop Garbage Collection Dates
 
