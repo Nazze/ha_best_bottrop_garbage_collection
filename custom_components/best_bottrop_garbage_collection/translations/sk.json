@@ -1,0 +1,31 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "description": "Vyberte názov ulice a zadajte číslo domu, aby ste získali aktuálne informácie o dátumoch odvozu odpadu",
+        "data": {
+          "street_name": "Ulica",
+          "number": "Číslo"
+        }
+      }
+    },
+    "abort": {
+      "already_configured": "Adresa už pridaná"
+    },
+    "error": {
+      "wrong_address": "Konfigurácia nie je platná. Skontrolujte si prosím číslo domu!"
+    }
+  },
+  "services": {
+    "ignore": {
+      "name" : "Ignorujte odvoz",
+      "description" : "Ignorovať túto entitu odpadu počas nasledujúcich definovaných dní (pretože ste vyniesli odpadkový kôš)",
+      "fields" : {
+        "days" : {
+          "name" : "Dni",
+          "description" : "Definujte, koľko dní má byť tento senzor ignorovaný (voliteľné, predvolené = 2, max = 365, reset = 0)"
+        }
+      }
+    }
+  }
+}
