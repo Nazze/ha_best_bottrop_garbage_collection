@@ -133,12 +133,10 @@ class BESTBottropSensor(CoordinatorEntity, SensorEntity):
             self._attr_unique_id,
         )
 
-        if self._trash_type_id == "A2954658" or self._trash_type_id == "43806A8A":
-            _LOGGER.debug("Container oder Weihnachten!")
+        if self._trash_type_id == "A2954658":
+            _LOGGER.debug("Container ignored")
             return
-
-        if self._trash_type_id == "3F14EDC7":
-            _LOGGER.debug("GELBE TONNE!")
+            
         # Now find my JSON
         # sub_list_data: lists
         # the data is structured as a dict. The key is the street_id.
