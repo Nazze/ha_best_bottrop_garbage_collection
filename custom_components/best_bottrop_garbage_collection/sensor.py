@@ -1,12 +1,20 @@
-""" Platform sensor for BEST Bottrop"""
+"""Platform sensor for BEST Bottrop."""
+
 from __future__ import annotations
+
 import logging
+from best_bottrop_garbage_collection_dates import BESTBottropGarbageCollectionDates
+from dataclasses import dataclass
 from datetime import date, datetime, timedelta
-from homeassistant.components.sensor import SensorEntity
+from homeassistant.components.sensor import (
+    RestoreSensor,
+    SensorEntity,
+    SensorExtraStoredData,
+)
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import (
-    HomeAssistant,
     callback,
+    HomeAssistant,
 )
 from homeassistant.helpers import entity_platform
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
@@ -24,7 +32,6 @@ from .const import (
 )
 import voluptuous as vol
 
-from best_bottrop_garbage_collection_dates import BESTBottropGarbageCollectionDates
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -86,7 +93,7 @@ async def async_setup_entry(
     async_add_entities(entities)
 
 
-class BESTBottropSensor(CoordinatorEntity, SensorEntity):
+class BESTBottropSensor(CoordinatorEntity, SensorEntity, RestoreSensor):
     """Representation BEST Bottrop garbage collection data."""
 
     _bcgc = BESTBottropGarbageCollectionDates()
@@ -125,6 +132,61 @@ class BESTBottropSensor(CoordinatorEntity, SensorEntity):
         self._days = -1
         self._ignore = None
 
+    async def async_added_to_hass(self):
+        """Check, if data to be restored."""
+
+        await super().async_added_to_hass()
+
+        # check, if there is data to be restored
+        if (restored_state := await self.async_get_last_state()) is not None:
+            self._state = restored_state.state
+            _LOGGER.debug("Restored state")
+        else:
+            _LOGGER.debug("No state to be restored")
+        
+        if (extra_data := await self.async_get_last_extra_data()) is not None:
+            return None
+            self._street_name = extra_data.extra_data["street_name"]
+            self._street_id = extra_data.extra_data["street_id"]
+            self._number = extra_data.extra_data["number"]
+            self._trash_type_id = extra_data.extra_data["trash_type_id"]
+            self._trash_type_name = extra_data.extra_data["trash_type_name"]
+            self._message = extra_data.extra_data["message"]
+            self._next_date = extra_data.extra_data["next_date"]
+            self._days = extra_data.extra_data["days"]
+            self._ignore = extra_data.extra_data["ignore"]
+
+            _LOGGER.debug("Restored attributes")
+        else:
+            _LOGGER.debug("Nothing to be restored")
+
+    async def async_get_last_sensor_data(
+        self,
+    ) -> BESTBottropSensorExtraStoredData | None:
+        """Restore Sensore Stored Data."""
+        if (restored_last_extra_data := await self.async_get_last_extra_data()) is None:
+            return None
+
+        return BESTBottropSensorExtraStoredData.from_dict(
+            restored_last_extra_data.as_dict()
+        )
+
+    @property
+    def garbage_restore_state_data(self) -> BESTBottropSensorExtraStoredData:
+        """Return sensor specific state data to be restored."""
+        return BESTBottropSensorExtraStoredData(
+            self._attr_native_value,
+            self._street_name,
+            self._street_id,
+            self._number,
+            self._trash_type_id,
+            self._trash_type_name,
+            self._message,
+            self._next_date,
+            self._days,
+            self._ignore,
+        )
+
     @callback
     def _handle_coordinator_update(self) -> None:
         """Handle updated data from the coordinator."""
@@ -136,7 +198,7 @@ class BESTBottropSensor(CoordinatorEntity, SensorEntity):
         if self._trash_type_id == "A2954658":
             _LOGGER.debug("Container ignored")
             return
-            
+
         # Now find my JSON
         # sub_list_data: lists
         # the data is structured as a dict. The key is the street_id.
@@ -209,7 +271,7 @@ class BESTBottropSensor(CoordinatorEntity, SensorEntity):
         return self._state
 
     async def ignore(self, days: int):
-        """Handle the ignore call. This will ignore this entity for the defined days"""
+        """Handle the ignore call. This will ignore this entity for the defined days."""
         _LOGGER.debug("Called handle_ignore for %s", self._attr_unique_id)
 
         ignore_until: date = None
@@ -225,3 +287,8 @@ class BESTBottropSensor(CoordinatorEntity, SensorEntity):
         _LOGGER.debug("Ignoring until %s", ignore_until)
         self._ignore = ignore_until
         await self.async_update_ha_state(True)
+
+
+@dataclass
+class BESTBottropSensorExtraStoredData(SensorExtraStoredData):
+    """Object to hold extra stored data."""
