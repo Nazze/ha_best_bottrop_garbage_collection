@@ -127,15 +127,17 @@ class BESTBottropSensor(CoordinatorEntity, RestoreSensor):
         self._state = None
 
         # extra attributes
-        self._street_name = street_name
-        self._street_id = street_id
-        self._number = number
-        self._trash_type_id = trash_type_id
-        self._trash_type_name = trash_type_name
-        self._message = ""
-        self._next_date = None
-        self._days = -1
-        self._ignore = None
+
+        self._extra_attributes = {}
+        self._extra_attributes["street_name"] = street_name
+        self._extra_attributes["street_id"] = street_id
+        self._extra_attributes["street_number"] = number
+        self._extra_attributes["trash_type_id"] = trash_type_id
+        self._extra_attributes["trash_type_name"] = trash_type_name
+        self._extra_attributes["special_message"] = ""
+        self._extra_attributes["next_date"] = None
+        self._extra_attributes["days"] = -1
+        self._extra_attributes["ignore_until"] = None
 
     async def async_added_to_hass(self) -> None:
         """Check, if data to be restored."""
@@ -143,9 +145,9 @@ class BESTBottropSensor(CoordinatorEntity, RestoreSensor):
         _LOGGER.debug("Checking for available data to be restored")
         await super().async_added_to_hass()
 
-        ls = await self.async_get_last_state()
-        lss = await self.async_get_last_sensor_data()
-        lsed = await self.async_get_last_extra_data()
+        # ls = await self.async_get_last_state()
+        # lss = await self.async_get_last_sensor_data()
+        # lsed = await self.async_get_last_extra_data()
 
         if (last_state := await self.async_get_last_state()) is not None:
             _LOGGER.debug(
@@ -157,31 +159,9 @@ class BESTBottropSensor(CoordinatorEntity, RestoreSensor):
             # ADDED CODE HERE
             if last_state.attributes is not None:
                 # extra attributes
+                # check if at least one key is there, then it is initialized and we should be safe to assign the others as well
                 if "street_name" in last_state.attributes:
-                    self._street_name = last_state.attributes["street_name"]
-                if "street_id" in last_state.attributes:
-                    self._street_id = last_state.attributes["street_id"]
-                if "street_number" in last_state.attributes:
-                    self._number = last_state.attributes["street_number"]
-                if "trash_type_id" in last_state.attributes:
-                    self._trash_type_id = last_state.attributes["trash_type_id"]
-                if "trash_type_name" in last_state.attributes:
-                    self._trash_type_name = last_state.attributes["trash_type_name"]
-                if "special_message" in last_state.attributes:
-                    self._message = last_state.attributes["special_message"]
-                if "next_date" in last_state.attributes:
-                    self._next_date = last_state.attributes["next_date"]
-                if "days" in last_state.attributes:
-                    self._days = last_state.attributes["days"]
-                if (
-                    ("ignore_until" in last_state.attributes)
-                    and (last_state.attributes["ignore_until"] is not None)
-                    and (last_state.attributes["ignore_until"] != "None")
-                ):
-                    # self._ignore = datetime.strptime(
-                    # last_state.attributes["ignore_until"], "%Y-%m-%d"
-                    # ).date()
-                    self._ignore = last_state.attributes["ignore_until"]
+                    self._extra_attributes.update(last_state.attributes)
             else:
                 _LOGGER.debug("No restoring extra data found for %s", self.entity_id)
         else:
@@ -198,7 +178,7 @@ class BESTBottropSensor(CoordinatorEntity, RestoreSensor):
             self._attr_unique_id,
         )
 
-        if self._trash_type_id == "A2954658":
+        if self._extra_attributes["trash_type_id"] == "A2954658":
             _LOGGER.debug("Container ignored")
             return
 
@@ -207,28 +187,33 @@ class BESTBottropSensor(CoordinatorEntity, RestoreSensor):
         # the data is structured as a dict. The key is the street_id.
         # That data to that key is the JSON-dict.
         if (self.coordinator.data is not None) and (
-            self._street_id in self.coordinator.data
+            self._extra_attributes["street_id"] in self.coordinator.data
         ):
-            street_json = self.coordinator.data[self._street_id]
+            street_json = self.coordinator.data[self._extra_attributes["street_id"]]
             # iterate throught the JSON of our street_id!
             for next_collection in street_json:
                 # now find the resulting trash type
-                if self._trash_type_id == next_collection["trashType"]:
+                if (
+                    self._extra_attributes["trash_type_id"]
+                    == next_collection["trashType"]
+                ):
                     # next collection date for the trashtype found
                     # the format is dd.mm.yyyy
                     ldate = next_collection["formattedDate"].split(".", 3)
                     next_date = date(int(ldate[2]), int(ldate[1]), int(ldate[0]))
                     _LOGGER.debug("Next date %s", next_date)
                     _LOGGER.debug("Today  %s", datetime.today())
-                    _LOGGER.debug("Ignore until  %s", self._ignore)
+                    _LOGGER.debug(
+                        "Ignore until  %s", self._extra_attributes["ignore_until"]
+                    )
 
                     if (
-                        (self._ignore is not None)
-                        and (type(self._ignore) == type("str"))
+                        (self._extra_attributes["ignore_until"] is not None)
+                        and (isinstance(self._extra_attributes["ignore_until"], str))
                         and (
                             (
                                 ignore := datetime.strptime(
-                                    self._ignore, "%Y-%m-%d"
+                                    self._extra_attributes["ignore_until"], "%Y-%m-%d"
                                 ).date()
                             )
                             is not None
@@ -242,7 +227,7 @@ class BESTBottropSensor(CoordinatorEntity, RestoreSensor):
 
                     _LOGGER.debug("Diff  %s", diff_date)
 
-                    self._next_date = date(
+                    self._extra_attributes["next_date"] = date(
                         next_date.year, next_date.month, next_date.day
                     )
 
@@ -254,11 +239,13 @@ class BESTBottropSensor(CoordinatorEntity, RestoreSensor):
                     if diff_date.days >= 0:
                         # if the diff date == 0, then it is/was today.
                         self._state = diff_date.days
-                        self._days = diff_date.days
+                        self._extra_attributes["days"] = diff_date.days
                     else:
                         self._state = None
 
-                    self._message = next_collection["message"]
+                    self._extra_attributes["special_message"] = next_collection[
+                        "message"
+                    ]
                     break
         # self.async_write_ha_state()
         super()._handle_coordinator_update()
@@ -266,18 +253,7 @@ class BESTBottropSensor(CoordinatorEntity, RestoreSensor):
     @property
     def extra_state_attributes(self):
         """Generate dictionary with extra state attributes."""
-        attr = {
-            "street_name": self._street_name,
-            "street_number": self._number,
-            "street_id": self._street_id,
-            "trash_type_id": self._trash_type_id,
-            "trash_type_name": self._trash_type_name,
-            "special_message": self._message,
-            "next_date": str(self._next_date),
-            "days": self._days,
-            "ignore_until": str(self._ignore),
-        }
-        return attr
+        return self._extra_attributes
 
     @property
     def native_value(self) -> str:
@@ -299,6 +275,6 @@ class BESTBottropSensor(CoordinatorEntity, RestoreSensor):
             ignore_until = date.today() + timedelta(days=days)
 
         _LOGGER.debug("Ignoring until %s", ignore_until)
-        self._ignore = str(ignore_until)
+        self._extra_attributes["ignore_until"] = str(ignore_until)
 
         await self.async_update_ha_state(True)
