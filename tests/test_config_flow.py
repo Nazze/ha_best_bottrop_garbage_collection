@@ -1,4 +1,5 @@
 """Test BEST garbage collection config flow."""
+
 from unittest.mock import patch
 
 from homeassistant import config_entries, data_entry_flow
@@ -71,4 +72,4 @@ async def test_failed_config_flow(hass, error_on_get_data):
         result["flow_id"], user_input=MOCK_CONFIG_1
     )
     assert result["type"] == data_entry_flow.RESULT_TYPE_FORM
-    assert result["errors"] == {"base": "config"}
+    assert result["errors"] == {"base": "wrong_address"}
