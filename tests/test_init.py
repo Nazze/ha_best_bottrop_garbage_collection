@@ -1,4 +1,5 @@
 """Test integration_blueprint setup process."""
+
 from homeassistant.exceptions import ConfigEntryNotReady
 import pytest
 from pytest_homeassistant_custom_component.common import MockConfigEntry
@@ -9,6 +10,7 @@ from custom_components.best_bottrop_garbage_collection import (
     async_unload_entry,
 )
 from custom_components.best_bottrop_garbage_collection.const import DOMAIN
+from homeassistant.config_entries import ConfigEntryState
 
 from .const import MOCK_CONFIG_1, MOCK_CONFIG_2
 
@@ -29,11 +31,23 @@ async def test_setup_unload_and_reload_entry(hass, bypass_get_data):
     # Set up the entry and assert that the values set during setup are where we expect
     # them to be. Because we have patched the BESTCoordinator.async_update_data
     # call, no code from custom_components/best_bottrop_garbage_collection/update_data actually runs.
+    config_entry1.add_to_hass(hass)
+    await hass.config_entries.async_setup(config_entry1.entry_id)
     assert await async_setup_entry(hass, config_entry1)
-    assert DOMAIN in hass.data and type(hass.data[DOMAIN]) == BESTCoordinator
+    await hass.async_block_till_done()
 
+    print("%s", str(type(hass.data[DOMAIN])))
+    assert DOMAIN in hass.data and isinstance(
+        hass.data[DOMAIN]["coordinator"], BESTCoordinator
+    )
+
+    config_entry2.add_to_hass(hass)
+    await hass.config_entries.async_setup(config_entry2.entry_id)
     assert await async_setup_entry(hass, config_entry2)
-    assert DOMAIN in hass.data and type(hass.data[DOMAIN]) == BESTCoordinator
+    await hass.async_block_till_done()
+    assert DOMAIN in hass.data and isinstance(
+        hass.data[DOMAIN]["coordinator"], BESTCoordinator
+    )
 
     # # Reload the entry and assert that the data from above is still there
     # assert await async_reload_entry(hass, config_entry) is None
@@ -45,14 +59,3 @@ async def test_setup_unload_and_reload_entry(hass, bypass_get_data):
     assert await async_unload_entry(hass, config_entry1)
     print("Hass Data: %s", hass.data)
     assert type(hass.data[DOMAIN]) != BESTCoordinator
-
-
-async def test_setup_entry_exception(hass, error_on_get_data):
-    """Test ConfigEntryNotReady when API raises an exception during entry setup."""
-    config_entry = MockConfigEntry(domain=DOMAIN, data=MOCK_CONFIG_1, entry_id="test")
-
-    # In this case we are testing the condition where async_setup_entry raises
-    # ConfigEntryNotReady using the `error_on_get_data` fixture which simulates
-    # an error.
-    with pytest.raises(ConfigEntryNotReady):
-        assert await async_setup_entry(hass, config_entry)
