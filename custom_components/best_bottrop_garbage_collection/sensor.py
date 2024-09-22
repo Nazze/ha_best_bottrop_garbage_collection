@@ -145,10 +145,6 @@ class BESTBottropSensor(CoordinatorEntity, RestoreSensor):
         _LOGGER.debug("Checking for available data to be restored")
         await super().async_added_to_hass()
 
-        # ls = await self.async_get_last_state()
-        # lss = await self.async_get_last_sensor_data()
-        # lsed = await self.async_get_last_extra_data()
-
         if (last_state := await self.async_get_last_state()) is not None:
             _LOGGER.debug(
                 "Restoring data from BEST sensor with entity_id %s", self.entity_id
@@ -247,7 +243,6 @@ class BESTBottropSensor(CoordinatorEntity, RestoreSensor):
                         "message"
                     ]
                     break
-        # self.async_write_ha_state()
         super()._handle_coordinator_update()
 
     @property
@@ -275,6 +270,6 @@ class BESTBottropSensor(CoordinatorEntity, RestoreSensor):
             ignore_until = date.today() + timedelta(days=days)
 
         _LOGGER.debug("Ignoring until %s", ignore_until)
-        self._extra_attributes["ignore_until"] = str(ignore_until)
+        self._extra_attributes["ignore_until"] = ignore_until
 
         await self.async_update_ha_state(True)
