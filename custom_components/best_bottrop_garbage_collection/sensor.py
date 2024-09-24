@@ -205,6 +205,7 @@ class BESTBottropSensor(CoordinatorEntity, RestoreSensor):
 
                     if (
                         (self._extra_attributes["ignore_until"] is not None)
+                        and (self._extra_attributes["ignore_until"] != "None")
                         and (isinstance(self._extra_attributes["ignore_until"], str))
                         and (
                             (
@@ -223,8 +224,8 @@ class BESTBottropSensor(CoordinatorEntity, RestoreSensor):
 
                     _LOGGER.debug("Diff  %s", diff_date)
 
-                    self._extra_attributes["next_date"] = date(
-                        next_date.year, next_date.month, next_date.day
+                    self._extra_attributes["next_date"] = str(
+                        date(next_date.year, next_date.month, next_date.day)
                     )
 
                     _LOGGER.debug(
@@ -270,6 +271,6 @@ class BESTBottropSensor(CoordinatorEntity, RestoreSensor):
             ignore_until = date.today() + timedelta(days=days)
 
         _LOGGER.debug("Ignoring until %s", ignore_until)
-        self._extra_attributes["ignore_until"] = ignore_until
+        self._extra_attributes["ignore_until"] = str(ignore_until)
 
         await self.async_update_ha_state(True)
