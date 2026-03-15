@@ -122,7 +122,7 @@ class BESTBottropSensor(CoordinatorEntity, RestoreSensor):
 
         # Create a device (actually service) for future compatibility with 2027.02
         self._attr_device_info = DeviceInfo(
-            name=f"{street_name_unique}_{number}",
+            name=f"{street_name_unique} {number}".title(),
             identifiers={(DOMAIN, f"{street_name_unique}_{number}")},
             entry_type=DeviceEntryType.SERVICE,
         )
