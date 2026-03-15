@@ -23,6 +23,7 @@ from homeassistant.core import (
     HomeAssistant,
 )
 from homeassistant.helpers import entity_platform
+from homeassistant.helpers.device_registry import DeviceEntryType, DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from homeassistant.helpers.update_coordinator import (
@@ -119,9 +120,17 @@ class BESTBottropSensor(CoordinatorEntity, RestoreSensor):
         street_name_unique = street_name.lower()
         trash_type_unique = trash_type_name.lower().replace(" ", "_")
 
+        # Create a device (actually service) for future compatibility with 2027.02
+        self._attr_device_info = DeviceInfo(
+            name=f"{street_name_unique} {number}".title(),
+            identifiers={(DOMAIN, f"{street_name_unique}_{number}")},
+            entry_type=DeviceEntryType.SERVICE,
+        )
+
         self._attr_attribution = ATTRIBUTION
+        self._attr_has_entity_name = True
         self._attr_unique_id = f"{street_name_unique}_{number}_{trash_type_unique}"
-        self.entity_id = f"sensor.{street_name_unique}_{number}_{trash_type_unique}"
+        # self.entity_id = f"sensor.{street_name_unique}_{number}_{trash_type_unique}"
         self._attr_name = f"{trash_type_name}"
         self._attr_icon = TRASH_ICONS[trash_type_id]
         self._state = None
