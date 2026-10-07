@@ -7,6 +7,7 @@
   "documentation": "https://github.com/Nazze/ha_best_bottrop_garbage_collection",
   "iot_class": "cloud_polling",
   "issue_tracker": "https://github.com/Nazze/ha_best_bottrop_garbage_collection/issues",
-  "requirements": ["best_bottrop_garbage_collection_dates==0.0.23"],
-  "version": "0.40"
+  "requirements": ["best_bottrop_garbage_collection_dates==1.1.0"],
+  "version": "0.50",
+  "beta" : true
 }
