@@ -2,10 +2,13 @@
 
 from __future__ import annotations
 
-import logging
-from best_bottrop_garbage_collection_dates import BESTBottropGarbageCollectionDates
 from dataclasses import dataclass
 from datetime import date, datetime, timedelta
+import logging
+
+from best_bottrop_garbage_collection_dates import BESTBottropGarbageCollectionDates
+import voluptuous as vol
+
 from homeassistant.components.sensor import (
     RestoreEntity,
     RestoreSensor,
@@ -13,32 +16,19 @@ from homeassistant.components.sensor import (
     SensorExtraStoredData,
 )
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import (
-    STATE_UNAVAILABLE,
-    STATE_UNKNOWN,
-)
-
-from homeassistant.core import (
-    callback,
-    HomeAssistant,
-)
+from homeassistant.const import STATE_UNAVAILABLE, STATE_UNKNOWN
+from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers import entity_platform
 from homeassistant.helpers.device_registry import DeviceEntryType, DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
-
 from homeassistant.helpers.update_coordinator import (
     CoordinatorEntity,
     DataUpdateCoordinator,
 )
+from homeassistant.util import dt as dt_util
 
 # from homeassistant.helpers.entity_component import EntityComponent
-from .const import (
-    ATTRIBUTION,
-    DOMAIN,
-    SERVICE_IGNORE,
-)
-import voluptuous as vol
-
+from .const import ATTRIBUTION, DOMAIN, SERVICE_IGNORE
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -134,6 +124,7 @@ class BESTBottropSensor(CoordinatorEntity, RestoreSensor):
         self._attr_name = f"{trash_type_name}"
         self._attr_icon = TRASH_ICONS[trash_type_id]
         self._state = None
+        self._has_valid_data = False
 
         # extra attributes
 
@@ -147,6 +138,8 @@ class BESTBottropSensor(CoordinatorEntity, RestoreSensor):
         self._extra_attributes["next_date"] = None
         self._extra_attributes["days"] = -1
         self._extra_attributes["ignore_until"] = None
+        self._extra_attributes["data_updated_at"] = None
+        self._extra_attributes["data_is_stale"] = True
 
     async def async_added_to_hass(self) -> None:
         """Check, if data to be restored."""
@@ -158,15 +151,16 @@ class BESTBottropSensor(CoordinatorEntity, RestoreSensor):
             _LOGGER.debug(
                 "Restoring data from BEST sensor with entity_id %s", self.entity_id
             )
-            if last_state.state != "unknown":
-                self._state = last_state.state
-                self._attr_native_value = last_state
+            if last_state.state not in (STATE_UNKNOWN, STATE_UNAVAILABLE):
+                self._state = int(last_state.state)
+                self._has_valid_data = True
             # ADDED CODE HERE
             if last_state.attributes is not None:
                 # extra attributes
                 # check if at least one key is there, then it is initialized and we should be safe to assign the others as well
                 if "street_name" in last_state.attributes:
                     self._extra_attributes.update(last_state.attributes)
+                    self._extra_attributes["data_is_stale"] = True
             else:
                 _LOGGER.debug("No restoring extra data found for %s", self.entity_id)
         else:
@@ -182,6 +176,11 @@ class BESTBottropSensor(CoordinatorEntity, RestoreSensor):
             "I am %s, callback function called",
             self._attr_unique_id,
         )
+
+        if not self.coordinator.last_update_success:
+            self._extra_attributes["data_is_stale"] = True
+            super()._handle_coordinator_update()
+            return
 
         if self._extra_attributes["trash_type_id"] == "A2954658":
             _LOGGER.debug("Container ignored")
@@ -233,9 +232,7 @@ class BESTBottropSensor(CoordinatorEntity, RestoreSensor):
 
                     _LOGGER.debug("Diff  %s", diff_date)
 
-                    self._extra_attributes["next_date"] = str(
-                        date(next_date.year, next_date.month, next_date.day)
-                    )
+                    self._extra_attributes["next_date"] = str(next_date)
 
                     _LOGGER.debug(
                         "Updateing native value: %s",
@@ -252,8 +249,18 @@ class BESTBottropSensor(CoordinatorEntity, RestoreSensor):
                     self._extra_attributes["special_message"] = next_collection[
                         "message"
                     ]
+                    self._extra_attributes["data_updated_at"] = (
+                        dt_util.utcnow().isoformat()
+                    )
+                    self._extra_attributes["data_is_stale"] = False
+                    self._has_valid_data = True
                     break
         super()._handle_coordinator_update()
+
+    @property
+    def available(self) -> bool:
+        """Return whether this sensor has a current or previously restored value."""
+        return self._has_valid_data
 
     @property
     def extra_state_attributes(self):
