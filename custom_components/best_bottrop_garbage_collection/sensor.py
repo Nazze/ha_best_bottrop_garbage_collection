@@ -10,7 +10,6 @@ from best_bottrop_garbage_collection_dates import BESTBottropGarbageCollectionDa
 import voluptuous as vol
 
 from homeassistant.components.sensor import (
-    RestoreEntity,
     RestoreSensor,
     SensorEntity,
     SensorExtraStoredData,
@@ -21,6 +20,7 @@ from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers import entity_platform
 from homeassistant.helpers.device_registry import DeviceEntryType, DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
+from homeassistant.helpers.restore_state import RestoreEntity
 from homeassistant.helpers.update_coordinator import (
     CoordinatorEntity,
     DataUpdateCoordinator,
